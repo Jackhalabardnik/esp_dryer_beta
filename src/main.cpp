@@ -29,8 +29,8 @@ void init_OLED() {
 }
 
 IRAM_ATTR void keyPressedOnPCF8574() {
-    expander_interrupt = true;
     int_counter++;
+    expander_interrupt = true;
 }
 
 void init_expander() {
@@ -46,6 +46,7 @@ void init_expander() {
     } else {
         draw_center_text("Expander init error");
     }
+
 }
 
 void setup() {
@@ -60,13 +61,18 @@ void loop() {
         if(expander_interrupt) {
             PCF8574::DigitalInput val = expander.digitalReadAll();
             auto text = std::to_string(val.p0) + std::to_string(val.p1) + std::to_string(val.p2) + std::to_string(val.p3);
+            if(text == "0000" || text == "1111") {
+                expander_interrupt = false;
+                continue;
+            }
             text += " : ";
             text += std::to_string(int_counter);
             text += " times";
             draw_center_text(text);
             expander_interrupt = false;
-            delay(100);
         }
         ESP.wdtFeed();
+        delay(1);
     }
+
 }
