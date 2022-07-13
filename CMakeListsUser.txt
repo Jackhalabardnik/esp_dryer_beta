@@ -1,0 +1,2 @@
+include_directories(".pio/libdeps/esp12e/ESP8266 and ESP32 OLED driver for SSD1306 displays/src")
+include_directories(".pio/libdeps/esp12e/PCF8574 library/")
