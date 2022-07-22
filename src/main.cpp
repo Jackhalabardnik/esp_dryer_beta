@@ -4,11 +4,8 @@
 #include "SSD1306Wire.h"
 #include "PCF8574.h"
 
-constexpr int SDA_pin = 13, SCL_pin = 14, interrupt_pin = 12;
-constexpr int debounce_delay = 200, screen_refresh_time = 50, key_refresh_time = 25;
-
-volatile int int_counter = 0;
-volatile bool is_expander_interrupt = false;
+constexpr int SDA_pin = 14, SCL_pin = 12; //SDA = D5; SCL = D6
+constexpr int screen_refresh_time = 25, key_refresh_time = 12;
 
 volatile struct KeyButtons {
     bool button_1 = true;
@@ -17,14 +14,9 @@ volatile struct KeyButtons {
     bool button_4 = true;
 } key_buttons;
 
-IRAM_ATTR void expander_interrupt_func() {
-    int_counter++;
-    is_expander_interrupt = true;
-}
-
 // Initialize the OLED display using Arduino Wire:
 SSD1306Wire display(0x3c, SDA_pin, SCL_pin);
-PCF8574 expander(0x20, SDA_pin, SCL_pin, interrupt_pin, expander_interrupt_func);
+PCF8574 expander(0x20, SDA_pin, SCL_pin);
 
 void draw_text(const std::string &text) {
     display.clear();
@@ -40,8 +32,15 @@ void init_OLED() {
 
 void init_expander() {
     for (int i = 0; i < 4; i++) {
-        expander.pinMode(i, INPUT, HIGH);
+        expander.pinMode(i, OUTPUT, HIGH);
     }
+
+    delay(5);
+
+    for (int i = 0; i < 4; i++) {
+        expander.pinMode(i, INPUT);
+    }
+
     expander.begin();
 }
 
@@ -56,24 +55,28 @@ void setup() {
 
 void loop() {
 
-    auto last_expander_interrupt_time = millis();
+    auto last_expander_refresh_time = millis();
     auto last_screen_refresh_time = millis();
 
+    int counter = 0;
+
     while (true) {
-        if (is_expander_interrupt && millis() - last_expander_interrupt_time >= debounce_delay) {
+        if (millis() - last_expander_refresh_time >= key_refresh_time) {
             PCF8574::DigitalInput val = expander.digitalReadAll();
 
             key_buttons.button_1 = val.p0;
             key_buttons.button_2 = val.p1;
             key_buttons.button_3 = val.p2;
             key_buttons.button_4 = val.p3;
-            last_expander_interrupt_time = millis();
-            is_expander_interrupt = false;
+
+            counter++;
+
+            last_expander_refresh_time = millis();
         }
 
-        if (millis() - last_screen_refresh_time >= refresh_time) {
+        if (millis() - last_screen_refresh_time >= screen_refresh_time) {
             std::stringstream ss;
-            ss << "Button 1: " << !key_buttons.button_1 << " ints = " << int_counter
+            ss << "Button 1: " << !key_buttons.button_1 << " -> " << counter
                << "\nButton 2: " << !key_buttons.button_2
                << "\nButton 3: " << !key_buttons.button_3
                << "\nButton 4: " << !key_buttons.button_4;
