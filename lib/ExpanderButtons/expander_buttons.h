@@ -9,6 +9,7 @@ namespace Expander {
         int long_press_score = 0;
         bool is_activated = false;
         bool is_long_press = false;
+        bool has_changed = false;
     };
 
     void updateAll(std::vector<Button> &buttons, PCF8574 &expander);
@@ -16,5 +17,5 @@ namespace Expander {
     //activation level: false - button is pressed when logic 0, true - button is pressed when logic 1
     extern bool activation_level;
 
-    constexpr int button_max_score = 10, button_max_long_press_score = 50, button_score_threshold = button_max_score / 2;
+    constexpr int button_max_score = 10, button_max_long_press_score = 1000, button_long_press_threshold_score = 75, button_score_threshold = button_max_score / 2;
 }

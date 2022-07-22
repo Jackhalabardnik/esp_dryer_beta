@@ -17,17 +17,19 @@ namespace Expander {
                     button.is_activated = false;
                     button.long_press_score = 0;
                     button.is_long_press = false;
+                    button.has_changed = true;
                 } else if (button.score == button_max_score && !button.is_long_press) {
                     if (button.long_press_score < button_max_long_press_score) {
                         button.long_press_score++;
                     }
-                    if (button.long_press_score == button_max_long_press_score) {
+                    if (button.long_press_score > button_long_press_threshold_score) {
                         button.is_long_press = true;
                     }
                 }
             } else {
                 if (button.score == button_max_score) {
                     button.is_activated = true;
+                    button.has_changed = true;
                 }
             }
 
