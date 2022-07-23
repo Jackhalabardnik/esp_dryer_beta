@@ -12,8 +12,6 @@ std::vector<Expander::Button> expander_buttons = {{0},
                                                   {1},
                                                   {2},
                                                   {3}};
-bool Expander::activation_level = false;
-
 std::array<int, 4> button_counter;
 
 struct PeriodicExecution {
