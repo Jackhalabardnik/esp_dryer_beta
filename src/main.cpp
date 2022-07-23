@@ -99,7 +99,8 @@ void refresh_screen() {
         ss << button_counter[i] << " ";
     }
 
-    ss << "\nSHT3X T: " << SHT3X_temperature << " H: "<< SHT3X_humidity;
+    ss.precision(2);
+    ss << std::fixed << "\nSHT3X T: " << SHT3X_temperature << " H: "<< SHT3X_humidity;
 
     draw_text(ss.str());
 }
