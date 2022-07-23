@@ -30,4 +30,4 @@ add_custom_target(
     WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
 )
 
-add_executable(Z_DUMMY_TARGET ${SRC_LIST} lib/ExpanderButtons/expander_buttons.h lib/ExpanderButtons/expander_buttons.cpp)
+add_executable(Z_DUMMY_TARGET ${SRC_LIST} lib/ExpanderButtons/expander_buttons.h lib/ExpanderButtons/expander_buttons.cpp lib/PeriodicExecution/periodic_execution.h lib/PeriodicExecution/periodic_execution.cpp)

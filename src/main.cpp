@@ -1,32 +1,31 @@
 #include "SSD1306Wire.h"
+#include <SHTSensor.h>
+
 #include "expander_buttons.h"
-#include <Arduino.h>
+#include "periodic_execution.h"
+
 #include <array>
 #include <sstream>
 #include <string>
 
 constexpr int SDA_pin = 14, SCL_pin = 12;// SDA = D5; SCL = D6
-constexpr int screen_refresh_time = 50, key_refresh_time = 5, long_key_press_add_time = 200;
+constexpr int screen_refresh_time = 50, key_refresh_time = 5, long_key_press_add_time = 200, temperature_refresh_time = 500;
+
+std::array<int, 4> button_counter;
+double SHT3X_temperature = 0, SHT3X_humidity = 0;
+
+SHTSensor sht30;
+SSD1306Wire display(0x3c, SDA_pin, SCL_pin);
+PCF8574 expander(0x20, SDA_pin, SCL_pin);
+
+
 
 std::vector<Expander::Button> expander_buttons = {{0},
                                                   {1},
                                                   {2},
                                                   {3}};
-std::array<int, 4> button_counter;
 
-struct PeriodicExecution {
-    unsigned long period;
-
-    void (*function)();
-
-    unsigned long last_execution_time = 0;
-};
-
-std::vector<PeriodicExecution> periodic_executions;
-
-// Initialize the OLED display using Arduino Wire:
-SSD1306Wire display(0x3c, SDA_pin, SCL_pin);
-PCF8574 expander(0x20, SDA_pin, SCL_pin);
+std::vector<PeriodicExecution::Routine> routines;
 
 void draw_text(const std::string &text) {
     display.clear();
@@ -55,12 +54,13 @@ void init_expander() {
 }
 
 void setup() {
+    Wire.begin(SDA_pin,SCL_pin);
     Serial.begin(9600);
 
     init_OLED();
     init_expander();
 
-    draw_text("Ready");
+    sht30.init();
 }
 
 void refresh_keys() {
@@ -77,32 +77,41 @@ void refresh_keys() {
 void increase_when_long_button_is_pressed() {
     for (int i = 0; i < 4; i++) {
         if (expander_buttons[i].is_long_press) {
-            button_counter[i] += 1 + (expander_buttons[i].long_press_score/200 * 3);
+            button_counter[i] += 1 + (expander_buttons[i].long_press_score / 200 * 3);
         }
+    }
+}
+
+void refresh_temperature() {
+    auto result = sht30.readSample();
+    if(result) {
+        SHT3X_temperature = sht30.getTemperature();
+        SHT3X_humidity = sht30.getHumidity();
+    } else {
+        SHT3X_temperature = sht30.getTemperature() + 100;
+        SHT3X_humidity = sht30.getHumidity();
     }
 }
 
 void refresh_screen() {
     std::stringstream ss;
     for (int i = 0; i < 4; i++) {
-        ss << "p " << expander_buttons[i].is_activated << " lp " << expander_buttons[i].is_long_press << " count "
-           << button_counter[i] << "\n";
+        ss << button_counter[i] << " ";
     }
+
+    ss << "\nSHT3X T: " << SHT3X_temperature << " H: "<< SHT3X_humidity;
+
     draw_text(ss.str());
 }
 
 void loop() {
-    periodic_executions.push_back({key_refresh_time, refresh_keys});
-    periodic_executions.push_back({screen_refresh_time, refresh_screen});
-    periodic_executions.push_back({long_key_press_add_time, increase_when_long_button_is_pressed});
+    routines.push_back({key_refresh_time, refresh_keys});
+    routines.push_back({temperature_refresh_time, refresh_temperature});
+    routines.push_back({long_key_press_add_time, increase_when_long_button_is_pressed});
+    routines.push_back({screen_refresh_time, refresh_screen});
 
     while (true) {
-        std::for_each(periodic_executions.begin(), periodic_executions.end(), [](auto &pe) {
-            if (millis() - pe.last_execution_time > pe.period || pe.last_execution_time > millis()) {
-                pe.function();
-                pe.last_execution_time = millis();
-            }
-        });
+        PeriodicExecution::updateExecutions(routines);
 
         EspClass::wdtFeed();
     }
