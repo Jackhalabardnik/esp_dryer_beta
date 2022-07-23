@@ -4,7 +4,7 @@
 
 namespace Expander {
     struct Button {
-        int expander_pin;
+        int expander_pin = 0;
         int score = 0;
         int long_press_score = 0;
         bool is_activated = false;

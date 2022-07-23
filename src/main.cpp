@@ -1,12 +1,12 @@
-#include <Arduino.h>
-#include <string>
-#include <sstream>
-#include <array>
 #include "SSD1306Wire.h"
 #include "expander_buttons.h"
+#include <Arduino.h>
+#include <array>
+#include <sstream>
+#include <string>
 
-constexpr int SDA_pin = 14, SCL_pin = 12; // SDA = D5; SCL = D6
-constexpr int screen_refresh_time = 50, key_refresh_time = 5, long_key_press_add_time = 1000;
+constexpr int SDA_pin = 14, SCL_pin = 12;// SDA = D5; SCL = D6
+constexpr int screen_refresh_time = 50, key_refresh_time = 5, long_key_press_add_time = 200;
 
 std::vector<Expander::Button> expander_buttons = {{0},
                                                   {1},
@@ -78,10 +78,8 @@ void refresh_keys() {
 
 void increase_when_long_button_is_pressed() {
     for (int i = 0; i < 4; i++) {
-        if (expander_buttons[i].has_changed && expander_buttons[i].is_activated) {
-            if (expander_buttons[i].is_long_press) {
-                button_counter[i] += 1 + ((expander_buttons[i].long_press_score / 200) * 5);
-            }
+        if (expander_buttons[i].is_long_press) {
+            button_counter[i] += 1 + (expander_buttons[i].long_press_score/200 * 3);
         }
     }
 }
@@ -102,7 +100,7 @@ void loop() {
 
     while (true) {
         std::for_each(periodic_executions.begin(), periodic_executions.end(), [](auto &pe) {
-            if (pe.last_execution_time - millis() > pe.period) {
+            if (millis() - pe.last_execution_time > pe.period || pe.last_execution_time > millis()) {
                 pe.function();
                 pe.last_execution_time = millis();
             }
