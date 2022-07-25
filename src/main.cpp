@@ -1,12 +1,11 @@
-#include "SSD1306Wire.h"
 #include <SHTSensor.h>
 
 #include "expander_buttons.h"
 #include "periodic_execution.h"
+#include "oled.h"
 
 #include <array>
 #include <sstream>
-#include <string>
 
 constexpr int SDA_pin = 14, SCL_pin = 12;// SDA = D5; SCL = D6
 constexpr int screen_refresh_time = 50, key_refresh_time = 5, long_key_press_add_time = 200, temperature_refresh_time = 500;
@@ -18,26 +17,12 @@ SHTSensor sht30;
 SSD1306Wire display(0x3c, SDA_pin, SCL_pin);
 PCF8574 expander(0x20, SDA_pin, SCL_pin);
 
-
-
 std::vector<Expander::Button> expander_buttons = {{0},
                                                   {1},
                                                   {2},
                                                   {3}};
 
 std::vector<PeriodicExecution::Routine> routines;
-
-void draw_text(const std::string &text) {
-    display.clear();
-    display.drawString(1, 1, text.c_str());
-    display.display();
-}
-
-void init_OLED() {
-    display.init();
-    display.flipScreenVertically();
-    display.setFont(ArialMT_Plain_10);
-}
 
 void init_expander() {
     for (int i = 0; i < 4; i++) {
@@ -57,7 +42,7 @@ void setup() {
     Wire.begin(SDA_pin,SCL_pin);
     Serial.begin(9600);
 
-    init_OLED();
+    OLED::init_OLED(display);
     init_expander();
 
     sht30.init();
@@ -102,7 +87,7 @@ void refresh_screen() {
     ss.precision(2);
     ss << std::fixed << "\nSHT3X T: " << SHT3X_temperature << " H: "<< SHT3X_humidity;
 
-    draw_text(ss.str());
+    OLED::draw_text(display, ss.str());
 }
 
 void loop() {
