@@ -12,12 +12,10 @@ void init_drivers();
 
 void refresh_keys();
 
-void refresh_long_press();
-
 void refresh_temperature();
 
 void refresh_screen();
 
-void drive_box();
+void do_logic();
 
 void safe_box();
